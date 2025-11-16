@@ -1,22 +1,25 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['contacts'])) {
-    $_SESSION['contacts'] = [];
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
 }
 
+$current_user_id = $_SESSION['user_id'];
+
+if (!isset($_SESSION['contacts_data'][$current_user_id])) {
+    $_SESSION['contacts_data'][$current_user_id] = [];
+}
 
 $errors = []; 
 $nama = "";
 $email = "";
 $telepon = "";
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    
     if (isset($_POST['action']) && $_POST['action'] == 'add') {
-        
         
         $nama = trim($_POST['nama']);
         $email = trim($_POST['email']);
@@ -36,7 +39,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $errors[] = "Format nomor telepon tidak valid";
         }
 
-       
         if (empty($errors)) {
             $new_contact = [
                 'id' => uniqid(), 
@@ -45,29 +47,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 'telepon' => $telepon
             ];
             
-            $_SESSION['contacts'][] = $new_contact;
+            $_SESSION['contacts_data'][$current_user_id][] = $new_contact;
 
-           
             header("Location: index.php");
             exit();
         }
-        
     }
 
-    
     if (isset($_POST['action']) && $_POST['action'] == 'delete') {
         $id_to_delete = $_POST['id_kontak'];
 
-        
-        foreach ($_SESSION['contacts'] as $index => $contact) {
+        foreach ($_SESSION['contacts_data'][$current_user_id] as $index => $contact) {
             if ($contact['id'] == $id_to_delete) {
-                unset($_SESSION['contacts'][$index]);
+                unset($_SESSION['contacts_data'][$current_user_id][$index]);
                 break;
             }
         }
 
-       
-        $_SESSION['contacts'] = array_values($_SESSION['contacts']);
+        $_SESSION['contacts_data'][$current_user_id] = array_values($_SESSION['contacts_data'][$current_user_id]);
 
         header("Location: index.php");
         exit();
@@ -84,7 +81,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </head>
 <body>
     <div class="container">
-        <h1>Sistem Manajemen Kontak Sederhana</h1>
+        
+        <div class="header-nav">
+            <span>Selamat datang, <strong><?php echo htmlspecialchars($current_user_id); ?></strong>!</span>
+            <a href="logout.php" class="logout-button">Logout</a>
+        </div>
+
+        <h1>Sistem Manajemen Kontak</h1>
 
         <div class="form-container">
             <h2>Tambah Kontak Baru</h2>
@@ -102,7 +105,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <form method="POST" action="index.php">
                 <input type="hidden" name="action" value="add">
-                
                 <div class="form-group">
                     <label for="nama">Nama:</label>
                     <input type="text" id="nama" name="nama" value="<?php echo htmlspecialchars($nama); ?>">
@@ -124,9 +126,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <hr>
 
         <div class="list-container">
-            <h2>Daftar Kontak</h2>
+            <h2>Daftar Kontak (Milik <?php echo htmlspecialchars($current_user_id); ?>)</h2>
             
-            <?php if (empty($_SESSION['contacts'])): ?>
+            <?php if (empty($_SESSION['contacts_data'][$current_user_id])): ?>
                 <p>Belum ada kontak yang disimpan.</p>
             <?php else: ?>
                 <table>
@@ -139,14 +141,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($_SESSION['contacts'] as $contact): ?>
+                        <?php foreach ($_SESSION['contacts_data'][$current_user_id] as $contact): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($contact['nama']); ?></td>
                                 <td><?php echo htmlspecialchars($contact['email']); ?></td>
                                 <td><?php echo htmlspecialchars($contact['telepon']); ?></td>
                                 <td class="action-links">
                                     <a href="edit.php?id=<?php echo $contact['id']; ?>">Edit</a>
-                                    
                                     <form method="POST" action="index.php" style="display:inline;">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id_kontak" value="<?php echo $contact['id']; ?>">
@@ -159,7 +160,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </table>
             <?php endif; ?>
         </div>
-
     </div>
 </body>
 </html>

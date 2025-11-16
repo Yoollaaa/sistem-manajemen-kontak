@@ -1,7 +1,13 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['contacts']) || !isset($_GET['id'])) {
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+$current_user_id = $_SESSION['user_id'];
+if (!isset($_SESSION['contacts_data'][$current_user_id]) || !isset($_GET['id'])) {
     header("Location: index.php");
     exit();
 }
@@ -10,7 +16,7 @@ $id_to_edit = $_GET['id'];
 $contact_to_edit = null;
 $contact_index = null; 
 
-foreach ($_SESSION['contacts'] as $index => $contact) {
+foreach ($_SESSION['contacts_data'][$current_user_id] as $index => $contact) {
     if ($contact['id'] == $id_to_edit) {
         $contact_to_edit = $contact;
         $contact_index = $index;
@@ -48,18 +54,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = "Format nomor telepon tidak valid";
     }
 
-    
     if (empty($errors)) {
-       
-        $_SESSION['contacts'][$contact_index]['nama'] = $nama;
-        $_SESSION['contacts'][$contact_index]['email'] = $email;
-        $_SESSION['contacts'][$contact_index]['telepon'] = $telepon;
+        $_SESSION['contacts_data'][$current_user_id][$contact_index]['nama'] = $nama;
+        $_SESSION['contacts_data'][$current_user_id][$contact_index]['email'] = $email;
+        $_SESSION['contacts_data'][$current_user_id][$contact_index]['telepon'] = $telepon;
 
-       
         header("Location: index.php");
         exit();
     }
-    
 }
 ?>
 
